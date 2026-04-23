@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/.NET-9.0-blue?logo=.NET" alt=".NET">
   </a>
   <a href="https://github.com/jeiel85/open-updater/actions/workflows/build.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/jeiel85/open-updater/build?label=Build" alt="Build">
+    <img src="https://img.shields.io/github/actions/workflow/status/jeiel85/open-updater/build.yml?label=Build" alt="Build">
   </a>
 </p>
 
