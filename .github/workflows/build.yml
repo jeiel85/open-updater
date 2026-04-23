@@ -32,7 +32,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: WpfAutoUpdater
-        path: ./publish/*.exe
+        path: ./publish
         retention-days: 30
 
   release:
@@ -47,6 +47,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: WpfAutoUpdater
+        path: .
 
     - name: Upload to release
       uses: actions/upload-release-asset@v1
@@ -54,6 +55,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./publish/WpfAutoUpdater.exe
+        asset_path: ./WpfAutoUpdater.exe
         asset_name: WpfAutoUpdater.exe
         asset_content_type: application/octet-stream
