@@ -49,6 +49,40 @@ jobs:
         name: WpfAutoUpdater
         path: .
 
+    - name: Get changelog
+      id: changelog
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        @"
+        ## What's Changed
+
+        - WPF AutoUpdater v${version} Release
+        - Modern WPF UI with rounded corners and blue theme
+        - Async/await based thread-safe download
+        - FTP, GitHub Releases, and Direct URL support
+
+        ## Download
+
+        Download the exe file from the Assets section below.
+        "@ | Out-File -FilePath changelog.md -Encoding utf8
+        Get-Content changelog.md
+
+    - name: Edit release
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const changelog = fs.readFileSync('changelog.md', 'utf8');
+          await github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: context.payload.release.id,
+            name: context.ref_name,
+            body: changelog,
+            make_latest: 'true'
+          });
+
     - name: Upload to release
       uses: actions/upload-release-asset@v1
       env:
@@ -56,5 +90,5 @@ jobs:
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./WpfAutoUpdater.exe
-        asset_name: WpfAutoUpdater.exe
+        asset_name: ${{ github.ref_name }}.exe
         asset_content_type: application/octet-stream
