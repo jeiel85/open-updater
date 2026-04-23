@@ -13,6 +13,7 @@ namespace WpfAutoUpdater;
 public partial class MainWindow : Window
 {
     private string _programPath = "POPs_Renewal";
+    private string _targetExeName = "POPs_Renewal.exe";
     private string _configPath;
     private string _tempPath;
     private string _backupPath;
@@ -49,12 +50,13 @@ public partial class MainWindow : Window
         try
         {
             _programPath = IniFile.Read("업데이트정보", "업데이트경로", _configPath, "POPs_Renewal");
+            _targetExeName = IniFile.Read("업데이트정보", "실행파일명", _configPath, "POPs_Renewal.exe");
             _ftpServer = IniFile.Read("업데이트정보", "FTP서버", _configPath, _ftpServer);
             _ftpUser = IniFile.Read("업데이트정보", "FTP사용자", _configPath, _ftpUser);
             _ftpPass = IniFile.Read("업데이트정보", "FTP암호", _configPath, _ftpPass);
             _ftpPort = IniFile.Read("업데이트정보", "FTP포트", _configPath, "");
 
-            Logger.WriteLog("AUTOUPDATE", "MAIN", "LoadSettings", "설정", $"경로={_programPath}, 서버={_ftpServer}");
+            Logger.WriteLog("AUTOUPDATE", "MAIN", "LoadSettings", "설정", $"경로={_programPath}, 서버={_ftpServer}, 실행파일={_targetExeName}");
         }
         catch (Exception ex)
         {
@@ -65,6 +67,7 @@ public partial class MainWindow : Window
     private void MainWindow_Load(object sender, RoutedEventArgs e)
     {
         lblProgramName.Text = _programPath;
+        lblAutoRunTarget.Text = $"(실행 파일: {_targetExeName})";
         lblVersion.Text = $"버전: {Assembly.GetExecutingAssembly().GetName().Version}";
         lblModifyDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -251,11 +254,15 @@ public partial class MainWindow : Window
     {
         try
         {
-            var exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Win4POS.exe");
+            var exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _targetExeName);
             if (File.Exists(exePath))
             {
                 Process.Start(new ProcessStartInfo(exePath) { UseShellExecute = true });
                 Application.Current.Shutdown();
+            }
+            else
+            {
+                MessageBox.Show($"실행 파일을 찾을 수 없습니다: {_targetExeName}\n환경설정에서 실행 파일명을 확인해 주세요.", "실행 실패", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         catch (Exception ex)
@@ -281,8 +288,12 @@ public partial class MainWindow : Window
     {
         var settingsWindow = new SettingsWindow(_configPath);
         settingsWindow.Owner = this;
-        settingsWindow.ShowDialog();
-        LoadSettings();
+        if (settingsWindow.ShowDialog() == true)
+        {
+            LoadSettings();
+            lblProgramName.Text = _programPath;
+            lblAutoRunTarget.Text = $"(실행 파일: {_targetExeName})";
+        }
     }
 
     private void btnCancel_Click(object sender, RoutedEventArgs e)

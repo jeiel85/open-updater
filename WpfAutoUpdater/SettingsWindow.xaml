@@ -65,14 +65,20 @@
 
         <!-- 프로그램 경로 -->
         <StackPanel Grid.Row="4" Margin="0,0,0,15">
-            <TextBlock Text="프로그램 경로" FontFamily="Segoe UI" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock Text="업데이트 소스 경로 (FTP/URL)" FontFamily="Segoe UI" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBox x:Name="txtProgramPath" FontFamily="Segoe UI" Padding="8"/>
+        </StackPanel>
+
+        <!-- 실행 파일 설정 추가 -->
+        <StackPanel Grid.Row="5" Margin="0,0,0,15">
+            <TextBlock Text="업데이트 후 실행할 파일명 (예: MainApp.exe)" FontFamily="Segoe UI" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtExeName" FontFamily="Segoe UI" Padding="8"/>
         </StackPanel>
 
         <!-- 버튼 -->
         <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="저장" Style="{StaticResource ModernButton}" Click="btnSave_Click"/>
-            <Button Content="취소" Style="{StaticResource ModernButton}" Margin="10,0,0,0" Click="btnCancel_Click"/>
+            <Button Content="닫기" Background="#888888" Style="{StaticResource ModernButton}" Margin="10,0,0,0" Click="btnCancel_Click"/>
         </StackPanel>
     </Grid>
 </Window>

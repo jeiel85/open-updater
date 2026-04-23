@@ -115,14 +115,18 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <CheckBox x:Name="chkAutoRun" Content="프로그램 자동 실행" IsChecked="True"
-                             VerticalAlignment="Center" FontFamily="Segoe UI" FontSize="10"/>
+                    <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
+                        <CheckBox x:Name="chkAutoRun" Content="업데이트 후 자동 실행" IsChecked="True"
+                                 FontFamily="Segoe UI" FontSize="11"/>
+                        <TextBlock x:Name="lblAutoRunTarget" Text="(실행 파일: POPs_Renewal.exe)" 
+                                 FontFamily="Segoe UI" FontSize="9" Foreground="#888888" Margin="20,2,0,0"/>
+                    </StackPanel>
 
                     <Button x:Name="btnSettings" Grid.Column="2" Content="환경설정"
-                            Style="{StaticResource ModernButton}" Click="btnSettings_Click"/>
-                    <Button x:Name="btnUpdate" Grid.Column="3" Content="업데이트"
-                            Style="{StaticResource ModernButton}" Margin="10,0,0,0" Click="btnUpdate_Click"/>
-                    <Button x:Name="btnCancel" Grid.Column="4" Content="취소"
+                            Style="{StaticResource ModernButton}"/>
+                    <Button x:Name="btnUpdate" Grid.Column="3" Content="업데이트 시작"
+                            Background="#28a745" Style="{StaticResource ModernButton}" Margin="10,0,0,0" Click="btnUpdate_Click"/>
+                    <Button x:Name="btnCancel" Grid.Column="4" Content="종료"
                             Style="{StaticResource ModernButton}" Margin="10,0,0,0" Click="btnCancel_Click"/>
                 </Grid>
             </Border>
