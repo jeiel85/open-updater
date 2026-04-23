@@ -8,8 +8,9 @@
 
 ### 🚀 [v1.0.0.5] 실행 파일명 변경 및 최종 브랜딩
 - **작업 내용**: 실행 파일명을 `WpfAutoUpdater.exe`에서 프로젝트 명칭인 `OpenUpdater.exe`로 변경.
+- **빌드 수정**: WPF에서 지원하지 않는 `PublishTrimmed` 설정을 비활성화하여 빌드 오류 해결.
 - **영향 범위**: `.csproj`, GitHub Actions (`build.yml`), `README.md`.
-- **목적**: 프로젝트 정체성 강화 및 사용자 인지 개선.
+- **목적**: 프로젝트 정체성 강화 및 안정적인 빌드 파이프라인 유지.
 
 ### ✨ [v1.0.0.4] 사용성 개선 및 앱 최적화 (App Diet)
 - **용량 최적화**: `.NET Trimming` 및 `Compression` 설정을 적용하여 실행 파일 용량을 획기적으로 줄임.
