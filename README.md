@@ -56,10 +56,10 @@
 
 ```bash
 # 기본 실행 (UI 모드)
-WpfAutoUpdater.exe
+OpenUpdater.exe
 
 # 자동 업데이트 실행 (인수가 1인 경우 즉시 확인)
-WpfAutoUpdater.exe 1
+OpenUpdater.exe 1
 ```
 
 ### ⚙️ 설정 파일 (UpdatePath.ini)
