@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;

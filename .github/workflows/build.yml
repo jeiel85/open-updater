@@ -27,59 +27,67 @@ jobs:
       shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
-        $version = "1.0.0.0" # 기본값
-        
+        $version = "1.0.0"
+
         if ("${{ github.ref_type }}" -eq "tag") {
           $version = $tag -replace '^v', ''
           echo "Detected tag version: $version"
         } else {
-          # 태그가 아닐 경우 csproj에서 추출
           [xml]$csproj = Get-Content WpfAutoUpdater/WpfAutoUpdater.csproj
           $version = $csproj.Project.PropertyGroup.Version
           echo "Using csproj version: $version"
         }
-        
-        # 버전 검증 및 로그
+
+        # AssemblyVersion/FileVersion은 .NET이 4자리를 요구하므로 .0 패딩
+        $parts = $version.Split('.')
+        $assemblyVersion = if ($parts.Count -eq 3) { "$version.0" } else { $version }
+
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        echo "::notice ::Building WpfAutoUpdater with version $version"
+        echo "ASSEMBLY_VERSION=$assemblyVersion" >> $env:GITHUB_OUTPUT
+        echo "::notice ::Building version $version (assembly: $assemblyVersion)"
 
     - name: Build
-      run: dotnet build WpfAutoUpdater/WpfAutoUpdater.csproj --configuration Release --no-restore -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }}
+      run: dotnet build WpfAutoUpdater/WpfAutoUpdater.csproj --configuration Release --no-restore -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.ASSEMBLY_VERSION }} -p:FileVersion=${{ steps.versioning.outputs.ASSEMBLY_VERSION }}
 
     - name: Publish
-      run: dotnet publish WpfAutoUpdater/WpfAutoUpdater.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }} -o ./publish
+      run: dotnet publish WpfAutoUpdater/WpfAutoUpdater.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.ASSEMBLY_VERSION }} -p:FileVersion=${{ steps.versioning.outputs.ASSEMBLY_VERSION }} -o ./publish
 
     - name: Verify Build Version
       shell: pwsh
       run: |
         $expectedVersion = "${{ steps.versioning.outputs.VERSION }}"
         $exePath = "./publish/OpenUpdater.exe"
-        
+
         if (!(Test-Path $exePath)) {
           Write-Error "Executable not found at $exePath"
           exit 1
         }
-        
+
         $fileVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath).FileVersion
         $productVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath).ProductVersion
-        
+
         echo "Expected Version: $expectedVersion"
         echo "File Version: $fileVersion"
         echo "Product Version: $productVersion"
-        
-        # 파일 버전이나 제품 버전 중 하나라도 예상 버전과 일치하는지 확인 (일부 환경에서는 뒤에 .0이 붙을 수 있음)
-        if ($fileVersion -eq $expectedVersion -or $fileVersion.StartsWith($expectedVersion)) {
+
+        if ($fileVersion.StartsWith($expectedVersion)) {
           echo "::notice ::Version verification successful: $fileVersion"
         } else {
-          echo "::error ::Version mismatch! Expected $expectedVersion but found $fileVersion in the executable."
+          echo "::error ::Version mismatch! Expected $expectedVersion but got $fileVersion"
           exit 1
         }
+
+    - name: Create Zip for Release
+      shell: pwsh
+      run: Compress-Archive -Path ./publish/* -DestinationPath ./publish/OpenUpdater.zip
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: WpfAutoUpdater
-        path: ./publish/OpenUpdater.exe
+        name: OpenUpdater-Binary
+        path: |
+          ./publish/OpenUpdater.exe
+          ./publish/OpenUpdater.zip
         retention-days: 30
 
   release:
@@ -93,15 +101,16 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: WpfAutoUpdater
+        name: OpenUpdater-Binary
         path: ./artifacts
 
     - name: Get changelog
       id: changelog
+      shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
         $version = $tag -replace '^v', ''
-        @"
+        $body = @"
         ## What's Changed
 
         - WPF AutoUpdater v${version} Release
@@ -111,28 +120,19 @@ jobs:
 
         ## Download
 
-        Download the exe file from the Assets section below.
-        "@ | Out-File -FilePath changelog.md -Encoding utf8
-        Get-Content changelog.md
+        Download the executable or zip file from the Assets section below.
+        "@
+        $body | Out-File -FilePath changelog.md -Encoding utf8
+        Write-Host $body
 
-    - name: Edit release
-      uses: actions/github-script@v7
+    - name: Upload to Release
+      uses: softprops/action-gh-release@v2
       with:
-        script: |
-          const fs = require('fs');
-          const changelog = fs.readFileSync('changelog.md', 'utf8');
-          await github.rest.repos.updateRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            release_id: context.payload.release.id,
-            name: context.ref_name,
-            body: changelog,
-            make_latest: 'true'
-          });
-
-    - name: Upload to release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ./artifacts/OpenUpdater.exe
+        files: |
+          ./artifacts/OpenUpdater.exe
+          ./artifacts/OpenUpdater.zip
+        body_path: changelog.md
+        name: ${{ github.ref_name }}
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
