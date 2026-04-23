@@ -26,13 +26,13 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Publish
-      run: dotnet publish -c Release -o ./publish
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: WpfAutoUpdater
-        path: ./publish
+        path: ./publish/WpfAutoUpdater.exe
         retention-days: 30
 
   release:
@@ -47,7 +47,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: WpfAutoUpdater
-        path: .
+        path: ./artifacts
 
     - name: Get changelog
       id: changelog
@@ -84,11 +84,8 @@ jobs:
           });
 
     - name: Upload to release
-      uses: actions/upload-release-asset@v1
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/WpfAutoUpdater.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./WpfAutoUpdater.exe
-        asset_name: ${{ github.ref_name }}.exe
-        asset_content_type: application/octet-stream
