@@ -76,11 +76,86 @@ public partial class MainWindow : Window
         _timer.Tick += (s, ev) => { lblModifyDate.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm"); };
         _timer.Start();
 
+        // 셀프 업데이트 체크
+        Dispatcher.BeginInvoke(async () => await CheckSelfUpdateAsync());
+
         // 자동 실행 모드 체크
         var args = Environment.GetCommandLineArgs();
         if (args.Length > 1 && args[1] == "1")
         {
             Dispatcher.BeginInvoke(async () => await StartUpdateAsync());
+        }
+    }
+
+    private async Task CheckSelfUpdateAsync()
+    {
+        try
+        {
+            var ghService = new GitHubDownloadService("jeiel85", "open-updater");
+            var release = await ghService.GetLatestReleaseInfoAsync();
+
+            if (release == null) return;
+
+            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            if (Version.TryParse(release.TagName.Replace("v", ""), out var latestVersion))
+            {
+                if (latestVersion > currentVersion)
+                {
+                    if (MessageBox.Show($"새로운 버전({release.TagName})이 발견되었습니다.\n지금 업데이트하시겠습니까?", 
+                        "셀프 업데이트", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                    {
+                        var asset = release.Assets.FirstOrDefault(a => a.Name == "OpenUpdater.exe");
+                        if (asset != null)
+                        {
+                            var tempFile = Path.Combine(Path.GetTempPath(), "OpenUpdater_New.exe");
+                            var result = await ghService.DownloadFileAsync(tempFile, asset.BrowserDownloadUrl);
+
+                            if (result.Success)
+                            {
+                                ApplySelfUpdate(tempFile);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("CheckSelfUpdate", ex);
+        }
+    }
+
+    private void ApplySelfUpdate(string newExePath)
+    {
+        try
+        {
+            var currentExe = Process.GetCurrentProcess().MainModule?.FileName;
+            if (string.IsNullOrEmpty(currentExe)) return;
+
+            var batchPath = Path.Combine(Path.GetTempPath(), "update_swap.bat");
+            var script = $@"
+@echo off
+timeout /t 2 /nobreak > nul
+move /y ""{newExePath}"" ""{currentExe}""
+start """" ""{currentExe}""
+del ""%~f0""
+";
+            File.WriteAllText(batchPath, script, Encoding.Default);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"{batchPath}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
+
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("ApplySelfUpdate", ex);
+            MessageBox.Show($"업데이트 적용 중 오류가 발생했습니다: {ex.Message}");
         }
     }
 

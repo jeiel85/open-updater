@@ -216,6 +216,24 @@ namespace AutoUpdate.Shared.Services
     }
 
     /// <summary>
+    /// GitHub 릴리즈 정보
+    /// </summary>
+    public class GitHubReleaseInfo
+    {
+        public string TagName { get; set; } = string.Empty;
+        public string AssetsUrl { get; set; } = string.Empty;
+        public string HtmlUrl { get; set; } = string.Empty;
+        public List<GitHubAsset> Assets { get; set; } = new();
+    }
+
+    public class GitHubAsset
+    {
+        public string Name { get; set; } = string.Empty;
+        public string BrowserDownloadUrl { get; set; } = string.Empty;
+        public long Size { get; set; }
+    }
+
+    /// <summary>
     /// GitHub 다운로드 서비스
     /// </summary>
     public class GitHubDownloadService
@@ -235,13 +253,13 @@ namespace AutoUpdate.Shared.Services
             _repo = repo;
             _tag = tag;
             _client = new HttpClient();
-            _client.DefaultRequestHeaders.Add("User-Agent", "WpfAutoUpdater");
+            _client.DefaultRequestHeaders.Add("User-Agent", "OpenUpdater");
         }
 
         /// <summary>
         /// 최신 릴리즈 정보 가져오기
         /// </summary>
-        public async Task<string?> GetLatestReleaseUrlAsync()
+        public async Task<GitHubReleaseInfo?> GetLatestReleaseInfoAsync()
         {
             try
             {
@@ -249,8 +267,14 @@ namespace AutoUpdate.Shared.Services
                     ? $"https://api.github.com/repos/{_owner}/{_repo}/releases/latest"
                     : $"https://api.github.com/repos/{_owner}/{_repo}/releases/tags/{_tag}";
 
-                var response = await _client.GetStringAsync(url);
-                return response;
+                var response = await _client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+
+                var json = await response.Content.ReadAsStringAsync();
+                return System.Text.Json.JsonSerializer.Deserialize<GitHubReleaseInfo>(json, new System.Text.Json.JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true 
+                });
             }
             catch (Exception ex)
             {
