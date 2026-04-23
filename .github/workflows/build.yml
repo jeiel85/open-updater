@@ -22,11 +22,32 @@ jobs:
     - name: Restore NuGet packages
       run: dotnet restore
 
+    - name: Set Versioning
+      id: versioning
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = "1.0.0.0" # 기본값
+        
+        if ("${{ github.ref_type }}" -eq "tag") {
+          $version = $tag -replace '^v', ''
+          echo "Detected tag version: $version"
+        } else {
+          # 태그가 아닐 경우 csproj에서 추출
+          [xml]$csproj = Get-Content WpfAutoUpdater/WpfAutoUpdater.csproj
+          $version = $csproj.Project.PropertyGroup.Version
+          echo "Using csproj version: $version"
+        }
+        
+        # 버전 검증 및 로그
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "::notice ::Building WpfAutoUpdater with version $version"
+
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }}
 
     - name: Publish
-      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }} -o ./publish
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
