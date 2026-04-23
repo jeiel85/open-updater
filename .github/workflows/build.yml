@@ -49,7 +49,7 @@ jobs:
         name: WpfAutoUpdater
 
     - name: Upload to release
-      uses: softprops/action-ghrelease@v2
+      uses: softprops/action-ghrelease@v1
       with:
         files: WpfAutoUpdater.exe
       env:
