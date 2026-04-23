@@ -44,10 +44,10 @@ jobs:
         echo "::notice ::Building WpfAutoUpdater with version $version"
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }}
+      run: dotnet build WpfAutoUpdater/WpfAutoUpdater.csproj --configuration Release --no-restore -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }}
 
     - name: Publish
-      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }} -o ./publish
+      run: dotnet publish WpfAutoUpdater/WpfAutoUpdater.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }} -o ./publish
 
     - name: Verify Build Version
       shell: pwsh
