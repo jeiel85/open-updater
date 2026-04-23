@@ -49,6 +49,32 @@ jobs:
     - name: Publish
       run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=${{ steps.versioning.outputs.VERSION }} -p:AssemblyVersion=${{ steps.versioning.outputs.VERSION }} -p:FileVersion=${{ steps.versioning.outputs.VERSION }} -o ./publish
 
+    - name: Verify Build Version
+      shell: pwsh
+      run: |
+        $expectedVersion = "${{ steps.versioning.outputs.VERSION }}"
+        $exePath = "./publish/WpfAutoUpdater.exe"
+        
+        if (!(Test-Path $exePath)) {
+          Write-Error "Executable not found at $exePath"
+          exit 1
+        }
+        
+        $fileVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath).FileVersion
+        $productVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exePath).ProductVersion
+        
+        echo "Expected Version: $expectedVersion"
+        echo "File Version: $fileVersion"
+        echo "Product Version: $productVersion"
+        
+        # 파일 버전이나 제품 버전 중 하나라도 예상 버전과 일치하는지 확인 (일부 환경에서는 뒤에 .0이 붙을 수 있음)
+        if ($fileVersion -eq $expectedVersion -or $fileVersion.StartsWith($expectedVersion)) {
+          echo "::notice ::Version verification successful: $fileVersion"
+        } else {
+          echo "::error ::Version mismatch! Expected $expectedVersion but found $fileVersion in the executable."
+          exit 1
+        }
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
